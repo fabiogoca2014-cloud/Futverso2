@@ -1,17 +1,16 @@
-# ⚽ Futverso V2
+# ⚽ Futverso V10
 
-Manager de futebol para navegador.
+Versão construída a partir do arquivo **BR Futebol Manager — 17 Clubes**.
 
-## V2
-- Carreira salva no aparelho
-- Séries A–F
-- Elenco com 22 jogadores, idade, posição, OVR e valor
-- Temporada por rodadas
-- Resultados, vitórias, empates, derrotas e gols
-- Moral e caixa evoluem com partidas
-- Mercado de transferências
-- Calendário
-- Classificação
-- Central de notícias do clube
+## Conteúdo importado
+- 17 clubes
+- 340 jogadores (20 por clube)
+- Estádios e cidades/UF
+- Posições e OVR
+- Salários mensais estimados para o jogo
+- Folha salarial mensal por clube
 
-Publicado via GitHub Pages a partir da branch principal.
+## V10
+Carreira, simulação influenciada pelo OVR, classificação, calendário, elenco completo, mercado, finanças, moral, notícias e pagamento periódico da folha salarial.
+
+> Os salários do arquivo são estimativas para o jogo, não salários reais confirmados.
