@@ -46,7 +46,7 @@ function continueGame(){const s=load();s?dashboard(s):newCareer()}
 function goals(strength){return Math.max(0,Math.min(6,Math.floor(Math.random()*4+(strength-55)/20)))}
 function playMatch(){let s=load(),o=opponent(s),a=goals(avg(DB[s.club])),b=goals(avg(DB[o]));const me=s.table[s.club],them=s.table[o];me.gf+=a;me.ga+=b;them.gf+=b;them.ga+=a;if(a>b){me.p+=3;me.w++;them.l++;s.w++;s.points+=3;s.morale=Math.min(100,s.morale+3);s.money+=180000;s.news.push('Vitória: '+s.club+' '+a+' x '+b+' '+o)}else if(a===b){me.p++;them.p++;me.d++;them.d++;s.d++;s.points++;s.money+=80000;s.news.push('Empate: '+s.club+' '+a+' x '+b+' '+o)}else{me.l++;them.w++;them.p+=3;s.l++;s.morale=Math.max(30,s.morale-3);s.news.push('Derrota: '+s.club+' '+a+' x '+b+' '+o)}s.gf+=a;s.ga+=b;s.round++;if((s.round-1)%4===0){s.money-=DB[s.club].payroll;s.news.push('Folha salarial paga: '+brl(DB[s.club].payroll))}save(s);result.textContent=a+' × '+b;setTimeout(()=>dashboard(s),1200)}
 function panel(title,html){panelTitle.textContent=title;panelBody.innerHTML=html;show('panel')}
-function openSquad(){const s=load(),d=DB[s.club];panel('👥 Elenco — '+s.club,'<div class="card"><b>'+d.stadium+'</b><br><span class="muted">'+d.city+' • Folha '+brl(d.payroll)+'</span></div><div class="list">'+d.players.map(p=>'<div class="player"><div><b>'+p.name+'</b><br><span class="muted">'+p.pos+' • '+brl(p.salary)+'/mês</span></div><span class="ovr">'+p.ovr+'</span></div>').join('')+'</div>')}
+function openSquad(){openSquadV103()}
 function marketPool(){const s=load();let pool=[];clubs.filter(c=>!s||c!==s.club).forEach(c=>DB[c].players.forEach(p=>pool.push({...p,club:c,series:DB[c].series||'Base V3'})));return pool}
 function openMarket(){panel('🔄 Mercado de Transferências','<div class="card marketFilters"><input id="marketSearch" class="input" placeholder="🔎 Pesquisar jogador..." oninput="renderMarket()"><select id="marketSeries" class="input" onchange="renderMarket()"><option value="">Todas as séries</option><option>Série A</option><option>Série B</option><option>Série C</option><option>Série D</option><option>Série E</option><option>Série F</option><option>Base V3</option></select><select id="marketPos" class="input" onchange="renderMarket()"><option value="">Todas as posições</option><option>GK</option><option>LD</option><option>LE</option><option>ZAG</option><option>VOL</option><option>MC</option><option>MEI</option><option>ATA</option><option>PD</option><option>PE</option><option>CA</option></select><select id="marketClub" class="input" onchange="renderMarket()"><option value="">Todos os clubes</option>'+clubs.map(c=>'<option>'+c+'</option>').join('')+'</select><div id="marketCount" class="muted"></div></div><div id="marketResults" class="list"></div>');renderMarket()}
 function renderMarket(){const q=(marketSearch.value||'').toLowerCase().trim(),ser=marketSeries.value,pos=marketPos.value,cl=marketClub.value;let pool=marketPool().filter(p=>(!q||(p.name+' '+p.club).toLowerCase().includes(q))&&(!ser||p.series===ser)&&(!pos||p.pos===pos)&&(!cl||p.club===cl)).sort((a,b)=>b.ovr-a.ovr);marketCount.textContent=pool.length+' jogador(es) encontrado(s)';marketResults.innerHTML=pool.slice(0,100).map((p,i)=>'<button class="player marketPlayer" onclick="playerDetails(\''+p.club.replace(/'/g,"\\'")+'\','+DB[p.club].players.indexOf(DB[p.club].players.find(x=>x.name===p.name&&x.pos===p.pos))+')"><div><b>'+p.name+'</b><br><span class="muted">'+p.club+' • '+p.series+' • '+p.pos+'<br>Salário '+brl(p.salary)+'/mês</span></div><span class="ovr">'+p.ovr+'</span></button>').join('')||'<div class="card">Nenhum jogador encontrado com esses filtros.</div>'}
@@ -172,8 +172,8 @@ function finishMatchV10(){let s=load(),m=s.v10Match;if(m.home>m.away){s.wins=(s.
 function openLiveMatchV10(){
  const s=load();if(!s)return;
  const rival=clubs.filter(c=>c!==s.club)[Math.floor(Math.random()*(clubs.length-1))];
- const all=DB[s.club].players.slice().sort((a,b)=>b.ovr-a.ovr);
- s.liveMatch={rival,minute:0,home:0,away:0,formation:'4-2-3-1',mentality:'Equilibrada',starters:all.slice(0,11).map(p=>p.name),bench:all.slice(11,18).map(p=>p.name),subsUsed:0,maxSubs:5,events:['⏱️ Tudo pronto para o início da partida.'],finished:false};
+ ensureSquadV103(s);const all=DB[s.club].players;
+ s.liveMatch={rival,minute:0,home:0,away:0,formation:s.formationV103||'4-2-3-1',mentality:'Equilibrada',starters:s.lineupV103.slice(),bench:s.benchV103.slice(),subsUsed:0,maxSubs:5,events:['⏱️ Tudo pronto para o início da partida.'],finished:false};
  save(s);renderLiveMatchV10();
 }
 function findOwnPlayer(s,n){return DB[s.club].players.find(p=>p.name===n)}
@@ -205,4 +205,33 @@ function finishLiveScreenV10(){
  const rates=ps.map(p=>({p,r:Math.min(10,Math.max(5.4,6+(p.ovr-65)/22+Math.random()*1.5+(m.home>m.away?.3:0)))})).sort((a,b)=>b.r-a.r);
  panel('🏁 FIM DE JOGO','<div class="liveScore final"><small>90+3</small><div><b>'+s.club+'</b><strong>'+m.home+' × '+m.away+'</strong><b>'+m.rival+'</b></div></div><div class="motm"><span>⭐</span><div><small>MELHOR JOGADOR</small><b>'+rates[0].p.name+'</b><p>Nota '+rates[0].r.toFixed(1)+'</p></div></div><h3>🎙️ PRINCIPAIS LANCES</h3><div class="commentaryV10">'+m.events.slice(-12).reverse().map(e=>'<p>'+e+'</p>').join('')+'</div><h3>📊 NOTAS</h3><div class="ratingsV10">'+rates.map(x=>'<div><span>'+x.p.pos+'</span><b>'+x.p.name+'</b><em>'+x.r.toFixed(1)+'</em></div>').join('')+'</div><button onclick="commitLiveMatchV10()">CONTINUAR ▶</button>');
 }
-function commitLiveMatchV10(){let s=load(),m=s.liveMatch;if(m.home>m.away){s.w=(s.w||0)+1;s.points=(s.points||0)+3;s.morale=Math.min(100,(s.morale||70)+4);s.reputation=(s.reputation||25)+1}else if(m.home===m.away){s.d=(s.d||0)+1;s.points=(s.points||0)+1}else{s.l=(s.l||0)+1;s.morale=Math.max(0,(s.morale||70)-3)}s.gf=(s.gf||0)+m.home;s.ga=(s.ga||0)+m.away;s.news.unshift('Partida: '+s.club+' '+m.home+' x '+m.away+' '+m.rival);delete s.liveMatch;save(s);dashboard(s)}
+function commitLiveMatchV10(){let s=load(),m=s.liveMatch;if(m.home>m.away){s.w=(s.w||0)+1;s.points=(s.points||0)+3;s.morale=Math.min(100,(s.morale||70)+4);s.reputation=(s.reputation||25)+1}else if(m.home===m.away){s.d=(s.d||0)+1;s.points=(s.points||0)+1}else{s.l=(s.l||0)+1;s.morale=Math.max(0,(s.morale||70)-3)}s.gf=(s.gf||0)+m.home;s.ga=(s.ga||0)+m.away;s.news.unshift('Partida: '+s.club+' '+m.home+' x '+m.away+' '+m.rival);ensureSquadV103(s);m.starters.forEach(n=>{if(s.playerState[n])s.playerState[n].energy=Math.max(35,s.playerState[n].energy-(8+Math.floor(Math.random()*10))) });delete s.liveMatch;save(s);dashboard(s)}
+
+/* ===== FUTVERSO V10.3 — ELENCO E ESCALAÇÃO ===== */
+function ensureSquadV103(s){
+ const all=DB[s.club].players;
+ if(!s.lineupV103||!s.lineupV103.length)s.lineupV103=all.slice().sort((a,b)=>b.ovr-a.ovr).slice(0,11).map(p=>p.name);
+ if(!s.benchV103||!s.benchV103.length)s.benchV103=all.filter(p=>!s.lineupV103.includes(p.name)).slice(0,7).map(p=>p.name);
+ s.playerState=s.playerState||{};
+ all.forEach(p=>{if(!s.playerState[p.name])s.playerState[p.name]={energy:85+Math.floor(Math.random()*16),morale:70+Math.floor(Math.random()*26),growth:0}});
+ return s;
+}
+function openSquadV103(){
+ let s=ensureSquadV103(load());save(s);const all=DB[s.club].players;
+ const card=(n,kind,i)=>{const p=all.find(x=>x.name===n),st=s.playerState[n];return '<button class="squad103 '+kind+'" onclick="selectSquadPlayer(\''+kind+'\','+i+')"><span class="pos103">'+p.pos+'</span><div><b>'+p.name+'</b><small>OVR '+p.ovr+' • ⚡ '+st.energy+'% • 🙂 '+st.morale+'%</small></div><em>'+p.ovr+'</em></button>'};
+ const reserves=all.filter(p=>!s.lineupV103.includes(p.name)&&!s.benchV103.includes(p.name));
+ panel('👥 MEU ELENCO • V10.3','<div class="squadSummary"><div><small>OVR MÉDIO</small><b>'+avg(all).toFixed(1)+'</b></div><div><small>TITULARES</small><b>'+s.lineupV103.length+'/11</b></div><div><small>BANCO</small><b>'+s.benchV103.length+'/7</b></div></div><div class="transferCard"><h3>🧠 ESCALAÇÃO SALVA</h3><label>Formação</label><select id="squadFormation" class="selectWide" onchange="saveSquadFormation(this.value)"><option>4-2-3-1</option><option>4-3-3</option><option>4-4-2</option><option>3-5-2</option><option>5-3-2</option></select><p class="muted">Toque em dois jogadores para trocar titular, banco ou reserva.</p></div><h3>👕 TITULARES</h3><div class="squadList103">'+s.lineupV103.map((n,i)=>card(n,'lineup',i)).join('')+'</div><h3>🪑 BANCO</h3><div class="squadList103">'+s.benchV103.map((n,i)=>card(n,'bench',i)).join('')+'</div><h3>📋 RESERVAS</h3><div class="squadList103">'+reserves.map((p,i)=>card(p.name,'reserve',i)).join('')+'</div><button onclick="autoLineupV103()">✨ ESCALAR MELHOR TIME</button>');
+ if(document.getElementById('squadFormation'))document.getElementById('squadFormation').value=s.formationV103||'4-2-3-1';
+}
+function squadArray(s,type){if(type==='lineup')return s.lineupV103;if(type==='bench')return s.benchV103;return DB[s.club].players.filter(p=>!s.lineupV103.includes(p.name)&&!s.benchV103.includes(p.name)).map(p=>p.name)}
+function selectSquadPlayer(type,i){
+ let s=ensureSquadV103(load()),arr=squadArray(s,type),name=arr[i];
+ if(!s.swapV103){s.swapV103={type,name};save(s);alert(name+' selecionado. Agora toque no jogador que deseja trocar.');return}
+ const a=s.swapV103,b={type,name};if(a.name===b.name){delete s.swapV103;save(s);return}
+ if(a.type==='reserve'&&b.type==='reserve'){delete s.swapV103;save(s);return}
+ const replace=(type,oldn,newn)=>{if(type==='lineup'){const x=s.lineupV103.indexOf(oldn);if(x>=0)s.lineupV103[x]=newn}else if(type==='bench'){const x=s.benchV103.indexOf(oldn);if(x>=0)s.benchV103[x]=newn}};
+ replace(a.type,a.name,b.name);replace(b.type,b.name,a.name);delete s.swapV103;save(s);openSquadV103();
+}
+function autoLineupV103(){let s=ensureSquadV103(load()),all=DB[s.club].players.slice().sort((a,b)=>(b.ovr+(s.playerState[b.name].energy/20))-(a.ovr+(s.playerState[a.name].energy/20)));s.lineupV103=all.slice(0,11).map(p=>p.name);s.benchV103=all.slice(11,18).map(p=>p.name);save(s);openSquadV103()}
+function saveSquadFormation(v){let s=ensureSquadV103(load());s.formationV103=v;save(s)}
+function recoverSquadV103(){let s=ensureSquadV103(load());Object.values(s.playerState).forEach(x=>x.energy=Math.min(100,x.energy+12));save(s)}
