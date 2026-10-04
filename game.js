@@ -79,3 +79,52 @@ function comparePlayer(club,idx){const s=load(),p=DB[club].players[idx],mine=DB[
 function openMarket(){let s=ensureV4(load());if(!s)return openMode('🔄 Mercado da Bola','Inicie uma carreira.');const mine=DB[s.club].players.map((p,i)=>'<option value="'+i+'">'+p.name+' • '+p.pos+' • OVR '+p.ovr+' • '+brl(valueOf(p))+'</option>').join('');let targets='';clubs.filter(c=>c!==s.club).forEach(c=>DB[c].players.forEach((p,i)=>targets+='<option value="'+c+'|'+i+'">'+p.name+' • '+c+' • OVR '+p.ovr+' • '+brl(valueOf(p))+'</option>'));const offers=s.offers.length?s.offers.map((o,i)=>'<div class="transferPlayer"><b>'+o.buyer+'</b> oferece '+brl(o.amount)+'<br><button onclick="acceptOffer('+i+')">ACEITAR PROPOSTA</button></div>').join(''):'<p><b>Nenhuma proposta oficial recebida ainda.</b><br>As ofertas chegam conforme as semanas avançam.</p>';panel('🔄 MERCADO DA BOLA','<button class="lime" onclick="openTransferList()">🏷️ MINHA LISTA DE TRANSFERÊNCIAS</button><div class="transferCard"><h3>📨 CLUBES INTERESSADOS / PROPOSTAS RECEBIDAS</h3>'+offers+'<button class="lime" onclick="consultInterested()">🔎 CONSULTAR CLUBES INTERESSADOS</button></div><div class="transferCard"><h3>🔁 TROCA DE JOGADORES</h3><p>Escolha um atleta do seu elenco, um jogador de outro clube e, se necessário, acrescente dinheiro.</p><label>Seu jogador</label><select id="tradeMine" class="selectWide">'+mine+'</select><label>Jogador desejado</label><select id="tradeTarget" class="selectWide">'+targets+'</select><label>Dinheiro adicional</label><input id="tradeCash" class="input" type="number" value="0"><button class="lime" onclick="tradeOffer()">ENVIAR PROPOSTA DE TROCA</button><p class="card">A proposta será analisada pelo clube e pelos dois jogadores.</p></div><div class="transferCard"><h3>BUSCAR JOGADOR</h3><div class="marketGrid"><input id="marketSearch" class="input" placeholder="Digite o nome... ex: Yuri" oninput="renderMarketV4()"><select id="marketSeries" class="input" onchange="renderMarketV4()"><option value="">Todas divisões</option><option>Série A</option><option>Série B</option><option>Série C</option><option>Série D</option><option>Série E</option><option>Série F</option></select><select id="marketPos" class="input" onchange="renderMarketV4()"><option value="">Todas posições</option>'+[...new Set(marketPool().map(p=>p.pos))].map(p=>'<option value="'+p+'">'+posLabel(p)+'</option>').join('')+'</select></div><div id="marketCount" class="muted"></div><button class="blueBtn" onclick="renderMarketV4()">🔎 PESQUISA GLOBAL</button></div><h3>JOGADORES</h3><div id="marketResults"></div>');renderMarketV4()}
 function openPreseason(){let s=ensureV4(load()),others=clubs.filter(c=>c!==s.club).slice(0,12);let fixtures='';for(let i=0;i<others.length;i+=2)fixtures+='<div class="fixture"><span>'+others[i]+'</span><b>×</b><span>'+(others[i+1]||'Seleção Regional')+'</span></div>';panel('PRÉ-TEMPORADA • AMISTOSO '+(s.preseason+1)+'/3','<div class="preseason"><div class="fixture"><span>'+s.club+'</span><b>SEU JOGO</b><span>Seleção Regional</span></div>'+fixtures+'</div><button onclick="playPreseason()">CONTINUAR ▶</button>')}
 function playPreseason(){let s=ensureV4(load()),a=goals(avg(DB[s.club])),b=goals(73),players=DB[s.club].players.slice(0,11),events=[];for(let i=0;i<a;i++)events.push('⚽ '+players[Math.floor(Math.random()*players.length)].name+' '+(8+Math.floor(Math.random()*80))+'\'');for(let i=0;i<b;i++)events.push('⚽ Atacante da Seleção Regional '+(8+Math.floor(Math.random()*80))+'\'');s.preseason=Math.min(3,s.preseason+1);save(s);panel('PRÉ-TEMPORADA • AMISTOSO '+s.preseason+'/3','<div class="scoreboard"><div>'+s.club+' × Seleção Regional</div><div class="score">'+a+' × '+b+'</div><h3>MELHOR JOGADOR DA PARTIDA</h3><b>'+(a>=b?players.sort((x,y)=>y.ovr-x.ovr)[0].name:'Atacante da Seleção Regional')+' • 8.'+(4+Math.floor(Math.random()*5))+'</b></div><div class="pitch"><div class="events">'+events.join('<br>')+'</div></div><h3>NOTAS DOS JOGADORES</h3><div class="card">'+players.map(p=>'<div class="rating"><span>'+p.pos+' &nbsp; '+p.name+'</span><b>'+(5.8+Math.random()*2).toFixed(1)+'</b></div>').join('')+'</div><button onclick="openPreseason()">CONTINUAR ▶</button>')}
+
+/* ===== FUTVERSO V10: MODOS DE JOGO ===== */
+const V10_MODES=[
+ {id:'classic',icon:'⭐',name:'Carreira Clássica',desc:'Escolha qualquer clube, monte o elenco, dispute títulos e construa sua história.',rules:'Liberdade total para começar.'},
+ {id:'journey',icon:'🧳',name:'Jornada de Técnico',desc:'Comece em clube menor, aumente sua reputação e receba propostas de equipes maiores.',rules:'Reputação inicial 10 • propostas por desempenho.'},
+ {id:'rtg',icon:'🚀',name:'Do Zero à Glória',desc:'Pegue um clube das divisões inferiores e tente chegar à Série A e ser campeão.',rules:'Começo nas Séries D, E ou F • orçamento reduzido.'},
+ {id:'survival',icon:'🔥',name:'Missão Impossível',desc:'Assuma um clube pressionado e cumpra metas difíceis sem ser demitido.',rules:'Moral 45 • diretoria exigente • caixa limitado.'},
+ {id:'youth',icon:'🌱',name:'Fábrica de Craques',desc:'Construa o time usando a categoria de base e desenvolva jovens.',rules:'Contratações limitadas • foco em jovens.'},
+ {id:'market',icon:'💼',name:'Rei do Mercado',desc:'Compre barato, venda bem, faça empréstimos e trocas para enriquecer o clube.',rules:'Meta financeira • mercado ampliado.'},
+ {id:'invincible',icon:'🏆',name:'Dinastia',desc:'Monte uma potência e tente dominar liga, copas e temporadas consecutivas.',rules:'Metas de títulos e sequência de vitórias.'},
+ {id:'challenge',icon:'🎯',name:'Desafios',desc:'Objetivos rápidos: escapar do rebaixamento, subir de divisão, revelar jogador ou conquistar copa.',rules:'Missões com objetivos específicos.'}
+];
+function openV10Modes(){
+ panel('🎮 MODOS • FUTVERSO V10','<div class="v10Hero"><b>ESCOLHA SUA HISTÓRIA</b><span>Agora cada carreira pode começar com um desafio diferente.</span></div><div class="modeGrid">'+V10_MODES.map(m=>'<button class="modeCard" onclick="selectV10Mode(\''+m.id+'\')"><span class="modeIcon">'+m.icon+'</span><strong>'+m.name+'</strong><small>'+m.desc+'</small><em>'+m.rules+'</em></button>').join('')+'</div>');
+}
+function selectV10Mode(id){
+ sessionStorage.setItem('futversoV10Mode',id);
+ show('career');
+ const m=V10_MODES.find(x=>x.id===id);
+ const hint=document.querySelector('#career .muted');
+ if(hint)hint.innerHTML='<b>'+m.icon+' '+m.name+'</b><br>'+m.desc+'<br><small>'+m.rules+'</small>';
+ renderClubsV10(id);
+}
+function renderClubsV10(id){
+ const el=document.getElementById('clubsEl'); if(!el)return;
+ let list=clubs.slice();
+ if(id==='rtg') list=list.filter(c=>['Série D','Série E','Série F'].includes(DB[c].series));
+ if(!list.length) list=clubs.slice().sort((a,b)=>avg(DB[a])-avg(DB[b])).slice(0,Math.max(6,Math.ceil(clubs.length/2)));
+ el.innerHTML=list.map(c=>'<button class="club" onclick="startV10Career(\''+c.replace(/'/g,"\\'")+'\')"><b>'+c+'</b><br><small>'+DB[c].series+' • OVR '+avg(DB[c]).toFixed(1)+' • '+DB[c].stadium+'</small></button>').join('');
+}
+function startV10Career(club){
+ const mode=sessionStorage.getItem('futversoV10Mode')||'classic';
+ startCareer(club);
+ let s=load(); if(!s)return;
+ s.v10Mode=mode;s.reputation=mode==='journey'?10:25;s.boardTrust=mode==='survival'?45:70;s.season=1;s.trophies=s.trophies||[];
+ if(mode==='rtg')s.money=Math.min(s.money,2500000);
+ if(mode==='survival'){s.money=Math.min(s.money,1200000);s.morale=45}
+ if(mode==='youth')s.youthOnly=true;
+ s.objective=v10Objective(mode,s);
+ s.news.unshift('Futverso V10: modo '+V10_MODES.find(x=>x.id===mode).name+' iniciado.');
+ save(s);dashboard(s);
+}
+function v10Objective(mode,s){
+ return {classic:'Terminar a temporada acima da expectativa da diretoria.',journey:'Aumentar reputação e conquistar uma proposta de clube maior.',rtg:'Conseguir acesso até chegar à Série A.',survival:'Evitar a demissão e cumprir a meta da diretoria.',youth:'Promover e desenvolver jogadores da base.',market:'Fechar a temporada com lucro no mercado.',invincible:'Conquistar títulos e criar uma dinastia.',challenge:'Complete o desafio atual da diretoria.'}[mode]||'Evoluir o clube.';
+}
+function openV10CareerPanel(){
+ const s=load();if(!s)return;const m=V10_MODES.find(x=>x.id===(s.v10Mode||'classic'))||V10_MODES[0];
+ panel('⭐ '+m.name,'<div class="careerTop"><div><small>MODO ATUAL</small><h2>'+m.icon+' '+m.name+'</h2><p>'+m.desc+'</p></div></div><div class="careerMeters"><div><small>REPUTAÇÃO</small><b>'+((s.reputation||25))+'</b></div><div><small>CONFIANÇA</small><b>'+((s.boardTrust||70))+'%</b></div><div><small>TEMPORADA</small><b>'+(s.season||1)+'</b></div></div><div class="transferCard"><h3>🎯 OBJETIVO PRINCIPAL</h3><p>'+(s.objective||v10Objective(m.id,s))+'</p></div><div class="hub"><button class="hubCard" onclick="openCareerHub()"><b>📋 Central da carreira</b>Empregos, estatísticas, história e notícias.</button><button class="hubCard" onclick="openCompetitions()"><b>🏆 Competições</b>Calendário, divisões, copas e seleção.</button><button class="hubCard" onclick="openClubHub()"><b>🏟️ Gestão do clube</b>Elenco, contratos, treino, tática e base.</button><button class="hubCard" onclick="openMarket()"><b>💼 Mercado da Bola</b>Transferências, empréstimos, trocas e pesquisa.</button><button class="hubCard" onclick="openPreseason()"><b>⚽ Pré-temporada</b>Amistosos, escalação, placar, eventos e notas.</button></div>');
+}
