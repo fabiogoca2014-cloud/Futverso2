@@ -128,3 +128,42 @@ function openV10CareerPanel(){
  const s=load();if(!s)return;const m=V10_MODES.find(x=>x.id===(s.v10Mode||'classic'))||V10_MODES[0];
  panel('⭐ '+m.name,'<div class="careerTop"><div><small>MODO ATUAL</small><h2>'+m.icon+' '+m.name+'</h2><p>'+m.desc+'</p></div></div><div class="careerMeters"><div><small>REPUTAÇÃO</small><b>'+((s.reputation||25))+'</b></div><div><small>CONFIANÇA</small><b>'+((s.boardTrust||70))+'%</b></div><div><small>TEMPORADA</small><b>'+(s.season||1)+'</b></div></div><div class="transferCard"><h3>🎯 OBJETIVO PRINCIPAL</h3><p>'+(s.objective||v10Objective(m.id,s))+'</p></div><div class="hub"><button class="hubCard" onclick="openCareerHub()"><b>📋 Central da carreira</b>Empregos, estatísticas, história e notícias.</button><button class="hubCard" onclick="openCompetitions()"><b>🏆 Competições</b>Calendário, divisões, copas e seleção.</button><button class="hubCard" onclick="openClubHub()"><b>🏟️ Gestão do clube</b>Elenco, contratos, treino, tática e base.</button><button class="hubCard" onclick="openMarket()"><b>💼 Mercado da Bola</b>Transferências, empréstimos, trocas e pesquisa.</button><button class="hubCard" onclick="openPreseason()"><b>⚽ Pré-temporada</b>Amistosos, escalação, placar, eventos e notas.</button></div>');
 }
+
+/* ===== FUTVERSO V10.1 — CENTRAL DE PARTIDA ===== */
+function openMatchCenter(){
+ const s=load(); if(!s)return;
+ const club=DB[s.club]; const rival=clubs.filter(c=>c!==s.club)[Math.floor(Math.random()*Math.max(1,clubs.length-1))]||'Seleção Regional';
+ const starters=(club.players||[]).slice().sort((a,b)=>b.ovr-a.ovr).slice(0,11);
+ s.v10Match={rival,minute:0,home:0,away:0,events:[],starters,subs:0,formation:'4-3-3',mentality:'Equilibrada'}; save(s);
+ renderMatchCenter();
+}
+function renderMatchCenter(){
+ const s=load(),m=s&&s.v10Match;if(!m)return;
+ const lineup=m.starters.map((p,i)=>'<div class="linePlayer"><span>'+p.pos+'</span><b>'+p.name+'</b><em>'+p.ovr+'</em></div>').join('');
+ panel('⚽ CENTRAL DA PARTIDA','<div class="scoreHero"><small>'+(m.minute?m.minute+" MIN":"PRÉ-JOGO")+'</small><div><b>'+s.club+'</b><strong>'+m.home+' × '+m.away+'</strong><b>'+m.rival+'</b></div></div><div class="matchControls"><label>Formação<select onchange="setMatchFormation(this.value)"><option>4-3-3</option><option>4-4-2</option><option>4-2-3-1</option><option>3-5-2</option><option>5-3-2</option></select></label><label>Mentalidade<select onchange="setMentality(this.value)"><option>Equilibrada</option><option>Defensiva</option><option>Ofensiva</option><option>Pressão alta</option><option>Contra-ataque</option></select></label></div><h3>👕 TITULARES</h3><div class="lineupV10">'+lineup+'</div><div class="matchButtons"><button onclick="playMatchV10()">▶ JOGAR</button><button onclick="simulateMatchV10()">⏩ SIMULAR</button></div>');
+}
+function setMatchFormation(v){let s=load();s.v10Match.formation=v;save(s)}
+function setMentality(v){let s=load();s.v10Match.mentality=v;save(s)}
+function playMatchV10(){runV10Match(false)}
+function simulateMatchV10(){runV10Match(true)}
+function runV10Match(quick){
+ let s=load(),m=s.v10Match;if(!m)return;
+ const own=avg(DB[s.club]),opp=68+Math.random()*12;
+ const attackBonus=m.mentality==='Ofensiva'||m.mentality==='Pressão alta'?0.16:m.mentality==='Defensiva'?-.10:0;
+ const hg=Math.max(0,Math.round(Math.random()*3+(own-opp)/12+attackBonus));
+ const ag=Math.max(0,Math.round(Math.random()*3+(opp-own)/15));
+ m.home=hg;m.away=ag;m.minute=90;
+ const names=m.starters.map(p=>p.name);
+ let ev=[]; for(let i=0;i<hg;i++)ev.push({min:8+Math.floor(Math.random()*80),text:'⚽ '+names[Math.floor(Math.random()*names.length)]+' — '+s.club});
+ for(let i=0;i<ag;i++)ev.push({min:8+Math.floor(Math.random()*80),text:'⚽ '+m.rival});
+ if(Math.random()<.55)ev.push({min:20+Math.floor(Math.random()*60),text:'🟨 Cartão amarelo'});
+ if(Math.random()<.22)ev.push({min:25+Math.floor(Math.random()*55),text:'🩹 Atendimento médico'});
+ m.events=ev.sort((a,b)=>a.min-b.min);save(s);renderMatchResultV10();
+}
+function renderMatchResultV10(){
+ const s=load(),m=s.v10Match;
+ const ratings=m.starters.map(p=>({p,n:Math.min(10,Math.max(5.5,6+(p.ovr-65)/20+(Math.random()*1.8)))})).sort((a,b)=>b.n-a.n);
+ const motm=ratings[0];
+ panel('🏁 FIM DE JOGO','<div class="scoreHero final"><small>90+3</small><div><b>'+s.club+'</b><strong>'+m.home+' × '+m.away+'</strong><b>'+m.rival+'</b></div></div><div class="motm"><span>⭐</span><div><small>MELHOR JOGADOR</small><b>'+motm.p.name+'</b><p>'+motm.p.pos+' • Nota '+motm.n.toFixed(1)+'</p></div></div><div class="eventsV10">'+(m.events.length?m.events.map(e=>'<p><b>'+e.min+"'</b> "+e.text+'</p>').join(''):'<p>Partida sem grandes acontecimentos.</p>')+'</div><h3>📊 NOTAS DOS JOGADORES</h3><div class="ratingsV10">'+ratings.map(r=>'<div><span>'+r.p.pos+'</span><b>'+r.p.name+'</b><em>'+r.n.toFixed(1)+'</em></div>').join('')+'</div><button onclick="finishMatchV10()">CONTINUAR ▶</button>');
+}
+function finishMatchV10(){let s=load(),m=s.v10Match;if(m.home>m.away){s.wins=(s.wins||0)+1;s.morale=Math.min(100,(s.morale||70)+4);s.reputation=(s.reputation||25)+1}else if(m.home<m.away){s.losses=(s.losses||0)+1;s.morale=Math.max(0,(s.morale||70)-3)}else{s.draws=(s.draws||0)+1}s.news.unshift('Resultado: '+s.club+' '+m.home+' x '+m.away+' '+m.rival);delete s.v10Match;save(s);dashboard(s)}
