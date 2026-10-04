@@ -2,11 +2,12 @@ const DB={"Portuguesa-SP":{"stadium":"Estádio do Canindé","city":"São Paulo -
 const clubs=Object.keys(DB),SAVE='futversoV3';
 clubs.forEach((c,i)=>{if(!DB[c].series)DB[c].series=['Série A','Série B','Série C','Série D','Série E','Série F'][i%6]});
 const brl=n=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:0}).format(n);
-function show(id){document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active')}
-function load(){return JSON.parse(localStorage.getItem(SAVE))}
+function show(id){document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));const el=document.getElementById(id);if(el)el.classList.add('active')}
+function load(){try{const raw=localStorage.getItem(SAVE);return raw?JSON.parse(raw):null}catch(e){console.error('Save inválido',e);return null}}
 function save(s){localStorage.setItem(SAVE,JSON.stringify(s))}
 function avg(team){return team.players.reduce((a,p)=>a+p.ovr,0)/team.players.length}
-function newCareer(){const tutorial=[
+function newCareer(){localStorage.removeItem(SAVE);show('career')}
+const tutorial=[
 ['Bem-vindo ao Futverso','Antes de entrar no jogo, este tutorial mostra as áreas principais e como sua carreira é salva.'],
 ['👥 Escalação','Em Meu Elenco você acompanha jogadores, posição, OVR, energia e moral.'],
 ['⚽ Partidas','Simule as partidas e acompanhe resultados, classificação, moral e evolução da temporada.'],
@@ -37,7 +38,7 @@ function openScout(){let pool=[];clubs.forEach(c=>DB[c].players.forEach(p=>pool.
 function openObjectives(){const s=load();panel('🎯 Objetivos','<div class="card">🏆 Terminar entre os 4 primeiros</div><div class="card">💰 Manter caixa positivo</div><div class="card">⭐ Moral acima de 70%</div><div class="card">⚽ Marcar 20 gols na temporada</div>')}
 function openWorld(){openMode('🌎 Mundo Vivo','As demais equipes participam da classificação e evoluem no universo da carreira. A expansão incluirá resultados paralelos e movimentações de mercado.')}
 function openBrazil(){openMode('🇧🇷 Seleção Brasileira','Estrutura prevista: Eliminatórias, Copa América e Copa do Mundo.')}
-boot();show('career')}
+boot();
 function renderClubs(){clubsEl.innerHTML='';clubs.forEach(c=>{const d=DB[c],b=document.createElement('button');b.className='club';b.innerHTML='<b>⚽ '+c+'</b><br><span class="muted">'+d.city+' • OVR '+avg(d).toFixed(1)+'</span>';b.onclick=()=>start(c);clubsEl.appendChild(b)})}
 function start(club){const d=DB[club];const s={club,division:'Liga Alternativa',money:5000000,morale:80,round:1,points:0,w:0,d:0,l:0,gf:0,ga:0,news:['Você assumiu o '+club+'.','Estádio: '+d.stadium+'.'],table:Object.fromEntries(clubs.map(c=>[c,{p:0,w:0,d:0,l:0,gf:0,ga:0}]))};save(s);dashboard(s)}
 function opponent(s){const list=clubs.filter(c=>c!==s.club);return list[(s.round-1)%list.length]}
@@ -314,3 +315,5 @@ function validateSaveV100(){
 window.addEventListener('error',e=>{console.error('Futverso V100:',e.error||e.message)});
 
 function openModes(){return openAllModesV100()}
+
+function openV100Modes(){return openV10Modes()}
