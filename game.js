@@ -190,9 +190,9 @@ function liveMentality(v){let s=load();s.liveMatch.mentality=v;s.liveMatch.event
 function advanceLiveMatch(step){
  let s=load(),m=s.liveMatch;if(m.finished)return;
  const target=Math.min(90,m.minute+step),own=avg(DB[s.club]);
- while(m.minute<target){m.minute++;const boost=m.mentality==='Ofensiva'||m.mentality==='Pressão alta'?1.25:m.mentality==='Defensiva'?.72:1;
+ while(m.minute<target){m.minute++;const boost=m.mentality==='Ofensiva'||m.mentality==='Pressão alta'?1.25:m.mentality==='Defensiva' ? .72 : 1;
   if(Math.random()<.008*boost*(own/72)){m.home++;const scorer=m.starters[Math.floor(Math.random()*m.starters.length)];m.events.push('⚽ '+m.minute+"': GOOOOOL! "+scorer+' marca para '+s.club+'!')}
-  if(Math.random()<.007*(m.mentality==='Defensiva'?.75:1)){m.away++;m.events.push('⚽ '+m.minute+"': Gol do "+m.rival+'.')}
+  if(Math.random()<.007*(m.mentality==='Defensiva' ? .75 : 1)){m.away++;m.events.push('⚽ '+m.minute+"': Gol do "+m.rival+'.')}
   if(Math.random()<.006)m.events.push('🟨 '+m.minute+"': cartão amarelo após falta dura.");
   if(Math.random()<.004)m.events.push('🧤 '+m.minute+"': grande defesa do goleiro!");
   if(Math.random()<.004)m.events.push('🎯 '+m.minute+"': finalização perigosa passa perto do gol.");
@@ -202,7 +202,7 @@ function advanceLiveMatch(step){
 }
 function finishLiveScreenV10(){
  const s=load(),m=s.liveMatch,ps=m.starters.map(n=>findOwnPlayer(s,n)).filter(Boolean);
- const rates=ps.map(p=>({p,r:Math.min(10,Math.max(5.4,6+(p.ovr-65)/22+Math.random()*1.5+(m.home>m.away?.3:0)))})).sort((a,b)=>b.r-a.r);
+ const rates=ps.map(p=>({p,r:Math.min(10,Math.max(5.4,6+(p.ovr-65)/22+Math.random()*1.5+(m.home>m.away ? .3 : 0)))})).sort((a,b)=>b.r-a.r);
  panel('🏁 FIM DE JOGO','<div class="liveScore final"><small>90+3</small><div><b>'+s.club+'</b><strong>'+m.home+' × '+m.away+'</strong><b>'+m.rival+'</b></div></div><div class="motm"><span>⭐</span><div><small>MELHOR JOGADOR</small><b>'+rates[0].p.name+'</b><p>Nota '+rates[0].r.toFixed(1)+'</p></div></div><h3>🎙️ PRINCIPAIS LANCES</h3><div class="commentaryV10">'+m.events.slice(-12).reverse().map(e=>'<p>'+e+'</p>').join('')+'</div><h3>📊 NOTAS</h3><div class="ratingsV10">'+rates.map(x=>'<div><span>'+x.p.pos+'</span><b>'+x.p.name+'</b><em>'+x.r.toFixed(1)+'</em></div>').join('')+'</div><button onclick="commitLiveMatchV10()">CONTINUAR ▶</button>');
 }
 function commitLiveMatchV10(){let s=load(),m=s.liveMatch;if(m.home>m.away){s.w=(s.w||0)+1;s.points=(s.points||0)+3;s.morale=Math.min(100,(s.morale||70)+4);s.reputation=(s.reputation||25)+1}else if(m.home===m.away){s.d=(s.d||0)+1;s.points=(s.points||0)+1}else{s.l=(s.l||0)+1;s.morale=Math.max(0,(s.morale||70)-3)}s.gf=(s.gf||0)+m.home;s.ga=(s.ga||0)+m.away;s.news.unshift('Partida: '+s.club+' '+m.home+' x '+m.away+' '+m.rival);ensureSquadV103(s);m.starters.forEach(n=>{if(s.playerState[n])s.playerState[n].energy=Math.max(35,s.playerState[n].energy-(8+Math.floor(Math.random()*10))) });delete s.liveMatch;save(s);dashboard(s)}
