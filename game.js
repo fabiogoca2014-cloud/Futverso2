@@ -63,7 +63,7 @@ function valueOf(p){return Math.max(50000,Math.round(p.ovr*p.ovr*1200/1000)*1000
 function ensureV4(s){s.transferList=s.transferList||[];s.offers=s.offers||[];s.history=s.history||[];s.preseason=s.preseason||0;return s}
 function openClubHub(){panel('🏟️ CLUBE','<div class="transferCard"><h3>FUTEBOL E ESTRUTURA</h3><div class="hub">'+[['👕 Elenco','Titulares, suplentes, reservas e todos os jogadores.','openSquad()'],['📑 Central de contratos','Salários, vencimentos, cláusulas e renovações.','openContracts()'],['🏋️ Treinamento','Evolução, energia e centro de treinamento.','openTraining()'],['🧠 Tática','Formação, mentalidade e pressão.','openTactics()'],['🧠 Categoria de base','Evolução e promoção de jovens.','openYouth()'],['🏟️ Estrutura','Estádio, CT, base e departamento médico.','openInfrastructure()']].map(x=>'<button class="hubCard" onclick="'+x[2]+'"><b>'+x[0]+'</b>'+x[1]+'</button>').join('')+'</div></div>')}
 function openInfrastructure(){const s=load(),d=DB[s.club];openMode('🏟️ Estrutura','Estádio: <b>'+d.stadium+'</b><br>'+d.city+'<br><br>Centro de treinamento, base e departamento médico integrados ao clube.')}
-function openCompetitions(){panel('🏆 COMPETIÇÕES','<div class="transferCard"><h3>TODAS AS DISPUTAS EM UM SÓ LUGAR</h3><div class="hub">'+[['📅 Calendário','Jogos, rodadas e simulação da temporada.','openCalendar()'],['🥇 6 Divisões','Classificações, acesso, rebaixamento e artilharia.','openTable()'],['🏆 Torneios','Copas nacionais, continentais e partidas eliminatórias.',"openMode('🏆 Torneios','Copa BR e torneios eliminatórios da temporada.')"],['🇧🇷 Estaduais','Paulistas e campeonatos estaduais da temporada.',"openMode('🇧🇷 Estaduais','Área dos campeonatos estaduais.')"],['🇧🇷 Seleção Brasileira','Seleção, Eliminatórias, Copa América e Copa do Mundo.','openBrazil()'],['🌎 Mundo Vivo','Transferências, renovações, jovens e treinadores da CPU.','openWorld()']].map(x=>'<button class="hubCard" onclick="'+x[2]+'"><b>'+x[0]+'</b>'+x[1]+'</button>').join('')+'</div></div>')}
+function openCompetitionsLegacy(){panel('🏆 COMPETIÇÕES','<div class="transferCard"><h3>TODAS AS DISPUTAS EM UM SÓ LUGAR</h3><div class="hub">'+[['📅 Calendário','Jogos, rodadas e simulação da temporada.','openCalendar()'],['🥇 6 Divisões','Classificações, acesso, rebaixamento e artilharia.','openTable()'],['🏆 Torneios','Copas nacionais, continentais e partidas eliminatórias.',"openMode('🏆 Torneios','Copa BR e torneios eliminatórios da temporada.')"],['🇧🇷 Estaduais','Paulistas e campeonatos estaduais da temporada.',"openMode('🇧🇷 Estaduais','Área dos campeonatos estaduais.')"],['🇧🇷 Seleção Brasileira','Seleção, Eliminatórias, Copa América e Copa do Mundo.','openBrazil()'],['🌎 Mundo Vivo','Transferências, renovações, jovens e treinadores da CPU.','openWorld()']].map(x=>'<button class="hubCard" onclick="'+x[2]+'"><b>'+x[0]+'</b>'+x[1]+'</button>').join('')+'</div></div>')}
 function openCareerHub(){panel('⭐ CARREIRA','<div class="transferCard"><h3>SUA HISTÓRIA COMO TÉCNICO</h3><div class="hub">'+[['📋 Painel da carreira','Próximo passo, diretoria, forma e salvamento.',"dashboard(load())"],['💾 Salvar e backup','Carreira local e exportação em arquivo.','careerBackup()'],['📊 Estatísticas','Campanha, jogadores e desempenho.','openTable()'],['🏆 História e troféus','Temporadas e conquistas da carreira.','careerHistory()'],['💼 Empregos','Propostas e mudanças de clube.','careerJobs()'],['📰 Notícias','Notícias do seu clube e da temporada.','careerNews()']].map(x=>'<button class="hubCard" onclick="'+x[2]+'"><b>'+x[0]+'</b>'+x[1]+'</button>').join('')+'</div></div>')}
 function careerBackup(){const s=load();if(!s)return;const data=btoa(unescape(encodeURIComponent(JSON.stringify(s))));panel('💾 Salvar e backup','<div class="card"><p>Carreira salva automaticamente.</p><textarea class="input" rows="5" readonly>'+data+'</textarea><p class="muted">Código de backup da sua carreira.</p></div>')}
 function careerHistory(){const s=ensureV4(load());panel('🏆 História e troféus','<div class="card"><b>Temporada atual</b><p>'+s.w+' vitórias • '+s.d+' empates • '+s.l+' derrotas</p><p>Gols: '+s.gf+' pró / '+s.ga+' contra</p></div>')}
@@ -289,7 +289,7 @@ function finishSeasonV104(){let s=ensureSeasonV104(load()),tab=sortedV104(s.seas
 window.FUTVERSO_VERSION='V100';
 function safeSaveV100(s){try{save(s);return true}catch(e){console.error(e);return false}}
 function startMatchV100(){const s=load();if(!s||!s.club)return openV10Modes();return openLiveMatchV10()}
-function openCareerV100(){const s=load();if(s&&s.v10Mode)return openV10CareerPanel();return openCareerHub()}
+function openCareerV100(){return careerDashboardV100()}
 function openAllModesLegacyV100(){
  panel('🎮 FUTVERSO V100 — MODOS','<div class="hubGrid">'+
  '<button class="hubCard" onclick="openV10Modes()"><b>⚽ Carreira de Técnico</b>Escolha um clube e construa sua história.</button>'+
@@ -398,3 +398,40 @@ function openClubsByDivisionV100(){panel('🛡️ CLUBES POR DIVISÃO','<div cla
 function confirmNewCareerV100(){panel('🔁 NOVA CARREIRA','<div class="card"><b>Começar do zero?</b><p>Esta opção apaga a carreira atual deste aparelho e abre a seleção de clubes.</p></div><button onclick="newCareer()">SIM, COMEÇAR NOVA CARREIRA</button>')}
 
 function openAllModesV100(){return openModes30()}
+
+/* ===== FUTVERSO V100 — ORGANIZAÇÃO DOS MODOS ===== */
+const MODE_GROUPS_V100=[
+ {name:'⭐ CARREIRA',ids:['career','jobs','stats','trophies','newcareer','tutorial']},
+ {name:'🇧🇷 COMPETIÇÕES NACIONAIS',ids:['serieA','serieB','serieC','serieD','serieE','serieF','copaBR','estaduais']},
+ {name:'🌎 CONTINENTAIS E ALTERNATIVAS',ids:['libertadores','sulamericana','continentais','alternativas','abertura','historicos']},
+ {name:'⚽ GESTÃO DO CLUBE',ids:['squad','market','objectives','week','match','news','clubs']},
+ {name:'🎮 BRASIL ULTIMATE TEAM',ids:['ultimate','coins','packs']}
+];
+function openModes30(){
+ const sections=MODE_GROUPS_V100.map(gr=>'<section class="modeSection"><h3>'+gr.name+'</h3><div class="modes30">'+gr.ids.map(id=>{const i=MODES30.findIndex(m=>m[2]===id),m=MODES30[i];return '<button class="mode30" onclick="launchMode30('+i+')"><span>'+m[0]+'</span><div><b>'+m[1]+'</b><small>'+m[3]+'</small></div><em>›</em></button>'}).join('')+'</div></section>').join('');
+ panel('🎮 FUTVERSO V100','<div class="v100Intro"><b>UNIVERSO FUTVERSO</b><span>30 modos e áreas organizados em 5 categorias. Carreira, competições, gestão e Ultimate Team em um só lugar.</span></div><div class="modeQuick"><button onclick="openV10Modes()">⭐ NOVA CARREIRA</button><button onclick="continueGame()">▶ CONTINUAR</button></div>'+sections);
+}
+function competitionDashboardV100(){
+ panel('🏆 CENTRAL DE COMPETIÇÕES','<div class="v100Intro"><b>COMPETIÇÕES DO FUTVERSO</b><span>Nacionais, continentais e formatos alternativos.</span></div><div class="hubGrid">'+
+ ['Série A','Série B','Série C','Série D','Série E','Série F'].map(x=>'<button class="hubCard" onclick="openDivisionV100(\''+x+'\')"><b>🇧🇷 '+x+'</b>Classificação, clubes e temporada.</button>').join('')+
+ '<button class="hubCard" onclick="openCompetitionModeV100(\'copaBR\',\'🏆 Copa do Brasil\',\'Mata-mata nacional.\')"><b>🏆 Copa do Brasil</b>Fases eliminatórias.</button>'+
+ '<button class="hubCard" onclick="openCompetitionModeV100(\'estaduais\',\'🗺️ Estaduais\',\'Campeonatos estaduais.\')"><b>🗺️ Estaduais</b>Competições regionais.</button>'+
+ '<button class="hubCard" onclick="openCompetitionModeV100(\'libertadores\',\'🌎 Libertadores\',\'Competição continental.\')"><b>🌎 Libertadores</b>Disputa continental.</button>'+
+ '<button class="hubCard" onclick="openCompetitionModeV100(\'sulamericana\',\'🏆 Sul-Americana\',\'Competição continental.\')"><b>🏆 Sul-Americana</b>Disputa continental.</button></div>');
+}
+function careerDashboardV100(){
+ const s=load();if(!s)return openV10Modes();
+ panel('⭐ CENTRAL DA CARREIRA','<div class="careerTop"><div><small>CLUBE</small><b>'+s.club+'</b></div><div><small>REPUTAÇÃO</small><b>'+(s.reputation||25)+'</b></div><div><small>CONFIANÇA</small><b>'+(s.boardTrust||70)+'%</b></div></div><div class="hubGrid">'+
+ '<button class="hubCard" onclick="dashboard(load())"><b>🏠 Painel</b>Voltar ao dia a dia do clube.</button>'+
+ '<button class="hubCard" onclick="openSeasonV104()"><b>📅 Temporada</b>Rodadas e classificação.</button>'+
+ '<button class="hubCard" onclick="careerJobs()"><b>💼 Propostas</b>Clubes interessados no seu trabalho.</button>'+
+ '<button class="hubCard" onclick="openCareerStatsV100()"><b>📊 Estatísticas</b>Seu desempenho como técnico.</button>'+
+ '<button class="hubCard" onclick="openTrophiesV100()"><b>🏅 Troféus</b>Sua galeria de conquistas.</button>'+
+ '<button class="hubCard" onclick="roundNewsV104()"><b>📰 Notícias</b>Acontecimentos da carreira.</button></div>');
+}
+function clubDashboardV100(){
+ const s=load();if(!s)return openV10Modes();
+ panel('⚽ GESTÃO DO CLUBE','<div class="v100Intro"><b>'+s.club+'</b><span>Futebol, elenco e planejamento.</span></div><div class="hubGrid"><button class="hubCard" onclick="openSquad()"><b>👥 Elenco</b>Escalação, banco, energia e moral.</button><button class="hubCard" onclick="openTactics()"><b>🧠 Tática</b>Formação e estilo de jogo.</button><button class="hubCard" onclick="openTraining()"><b>🏋️ Treino</b>Desenvolvimento do elenco.</button><button class="hubCard" onclick="openMarket()"><b>🔄 Mercado</b>Contratações e negociações.</button><button class="hubCard" onclick="openContracts()"><b>📄 Contratos</b>Salários e renovações.</button><button class="hubCard" onclick="openYouth()"><b>🌱 Base</b>Jovens e futuras promessas.</button></div>');
+}
+
+function openCompetitions(){return competitionDashboardV100()}
