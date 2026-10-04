@@ -126,7 +126,7 @@ function v10Objective(mode,s){
 }
 function openV10CareerPanel(){
  const s=load();if(!s)return;const m=V10_MODES.find(x=>x.id===(s.v10Mode||'classic'))||V10_MODES[0];
- panel('⭐ '+m.name,'<div class="careerTop"><div><small>MODO ATUAL</small><h2>'+m.icon+' '+m.name+'</h2><p>'+m.desc+'</p></div></div><div class="careerMeters"><div><small>REPUTAÇÃO</small><b>'+((s.reputation||25))+'</b></div><div><small>CONFIANÇA</small><b>'+((s.boardTrust||70))+'%</b></div><div><small>TEMPORADA</small><b>'+(s.season||1)+'</b></div></div><div class="transferCard"><h3>🎯 OBJETIVO PRINCIPAL</h3><p>'+(s.objective||v10Objective(m.id,s))+'</p></div><div class="hub"><button class="hubCard" onclick="openCareerHub()"><b>📋 Central da carreira</b>Empregos, estatísticas, história e notícias.</button><button class="hubCard" onclick="openCompetitions()"><b>🏆 Competições</b>Calendário, divisões, copas e seleção.</button><button class="hubCard" onclick="openClubHub()"><b>🏟️ Gestão do clube</b>Elenco, contratos, treino, tática e base.</button><button class="hubCard" onclick="openMarket()"><b>💼 Mercado da Bola</b>Transferências, empréstimos, trocas e pesquisa.</button><button class="hubCard" onclick="openPreseason()"><b>⚽ Pré-temporada</b>Amistosos, escalação, placar, eventos e notas.</button></div>');
+ panel('⭐ '+m.name,'<div class="careerTop"><div><small>MODO ATUAL</small><h2>'+m.icon+' '+m.name+'</h2><p>'+m.desc+'</p></div></div><div class="careerMeters"><div><small>REPUTAÇÃO</small><b>'+((s.reputation||25))+'</b></div><div><small>CONFIANÇA</small><b>'+((s.boardTrust||70))+'%</b></div><div><small>TEMPORADA</small><b>'+(s.season||1)+'</b></div></div><div class="transferCard"><h3>🎯 OBJETIVO PRINCIPAL</h3><p>'+(s.objective||v10Objective(m.id,s))+'</p></div><div class="hub"><button class="hubCard" onclick="openCareerHub()"><b>📋 Central da carreira</b>Empregos, estatísticas, história e notícias.</button><button class="hubCard" onclick="openCompetitions()"><b>🏆 Competições</b>Calendário, divisões, copas e seleção.</button><button class="hubCard" onclick="openClubHub()"><b>🏟️ Gestão do clube</b>Elenco, contratos, treino, tática e base.</button><button class="hubCard" onclick="openMarket()"><b>💼 Mercado da Bola</b>Transferências, empréstimos, trocas e pesquisa.</button><button class="hubCard" onclick="openPreseason()"><b>⚽ Pré-temporada</b>Amistosos, escalação, placar, eventos e notas.</button><button class="hubCard" onclick="openLiveMatchV10()"><b>🎙️ Partida ao vivo</b>Narração minuto a minuto, banco, substituições e tática durante o jogo.</button></div>');
 }
 
 /* ===== FUTVERSO V10.1 — CENTRAL DE PARTIDA ===== */
@@ -167,3 +167,42 @@ function renderMatchResultV10(){
  panel('🏁 FIM DE JOGO','<div class="scoreHero final"><small>90+3</small><div><b>'+s.club+'</b><strong>'+m.home+' × '+m.away+'</strong><b>'+m.rival+'</b></div></div><div class="motm"><span>⭐</span><div><small>MELHOR JOGADOR</small><b>'+motm.p.name+'</b><p>'+motm.p.pos+' • Nota '+motm.n.toFixed(1)+'</p></div></div><div class="eventsV10">'+(m.events.length?m.events.map(e=>'<p><b>'+e.min+"'</b> "+e.text+'</p>').join(''):'<p>Partida sem grandes acontecimentos.</p>')+'</div><h3>📊 NOTAS DOS JOGADORES</h3><div class="ratingsV10">'+ratings.map(r=>'<div><span>'+r.p.pos+'</span><b>'+r.p.name+'</b><em>'+r.n.toFixed(1)+'</em></div>').join('')+'</div><button onclick="finishMatchV10()">CONTINUAR ▶</button>');
 }
 function finishMatchV10(){let s=load(),m=s.v10Match;if(m.home>m.away){s.wins=(s.wins||0)+1;s.morale=Math.min(100,(s.morale||70)+4);s.reputation=(s.reputation||25)+1}else if(m.home<m.away){s.losses=(s.losses||0)+1;s.morale=Math.max(0,(s.morale||70)-3)}else{s.draws=(s.draws||0)+1}s.news.unshift('Resultado: '+s.club+' '+m.home+' x '+m.away+' '+m.rival);delete s.v10Match;save(s);dashboard(s)}
+
+/* ===== FUTVERSO V10.2 — PARTIDA AO VIVO ===== */
+function openLiveMatchV10(){
+ const s=load();if(!s)return;
+ const rival=clubs.filter(c=>c!==s.club)[Math.floor(Math.random()*(clubs.length-1))];
+ const all=DB[s.club].players.slice().sort((a,b)=>b.ovr-a.ovr);
+ s.liveMatch={rival,minute:0,home:0,away:0,formation:'4-2-3-1',mentality:'Equilibrada',starters:all.slice(0,11).map(p=>p.name),bench:all.slice(11,18).map(p=>p.name),subsUsed:0,maxSubs:5,events:['⏱️ Tudo pronto para o início da partida.'],finished:false};
+ save(s);renderLiveMatchV10();
+}
+function findOwnPlayer(s,n){return DB[s.club].players.find(p=>p.name===n)}
+function renderLiveMatchV10(){
+ const s=load(),m=s.liveMatch;if(!m)return;
+ const starters=m.starters.map((n,i)=>{const p=findOwnPlayer(s,n);return '<button class="livePlayer" onclick="chooseSubOut('+i+')"><span>'+p.pos+'</span><b>'+p.name+'</b><em>'+p.ovr+'</em></button>'}).join('');
+ const bench=m.bench.map((n,i)=>{const p=findOwnPlayer(s,n);return '<button class="benchPlayer" onclick="chooseSubIn('+i+')"><span>'+p.pos+'</span><b>'+p.name+'</b><em>'+p.ovr+'</em></button>'}).join('');
+ panel('⚽ PARTIDA AO VIVO','<div class="liveScore"><small>'+m.minute+"'</small><div><b>'+s.club+'</b><strong>'+m.home+' × '+m.away+'</strong><b>'+m.rival+'</b></div></div><div class="liveActions"><button onclick="advanceLiveMatch(5)">▶ +5 MIN</button><button onclick="advanceLiveMatch(15)">⏩ +15 MIN</button><button onclick="advanceLiveMatch(90)">⏭ ATÉ O FIM</button></div><div class="matchControls"><label>Formação<select onchange="liveFormation(this.value)"><option '+(m.formation==='4-2-3-1'?'selected':'')+'>4-2-3-1</option><option '+(m.formation==='4-3-3'?'selected':'')+'>4-3-3</option><option '+(m.formation==='4-4-2'?'selected':'')+'>4-4-2</option><option '+(m.formation==='3-5-2'?'selected':'')+'>3-5-2</option><option '+(m.formation==='5-3-2'?'selected':'')+'>5-3-2</option></select></label><label>Mentalidade<select onchange="liveMentality(this.value)"><option>Equilibrada</option><option>Ofensiva</option><option>Defensiva</option><option>Pressão alta</option><option>Contra-ataque</option></select></label></div><div class="liveStatus"><b>🔄 Substituições: '+m.subsUsed+'/'+m.maxSubs+'</b><span>Toque em um titular e depois em um reserva para trocar.</span></div><h3>👕 EM CAMPO</h3><div class="liveLineup">'+starters+'</div><h3>🪑 BANCO</h3><div class="liveBench">'+bench+'</div><h3>🎙️ NARRAÇÃO</h3><div class="commentaryV10">'+m.events.slice(-10).reverse().map(e=>'<p>'+e+'</p>').join('')+'</div></div>');
+}
+function chooseSubOut(i){let s=load();if(s.liveMatch.finished)return;s.liveMatch.subOut=i;save(s);renderLiveMatchV10()}
+function chooseSubIn(i){let s=load(),m=s.liveMatch;if(m.subOut===undefined)return alert('Primeiro escolha um titular.');if(m.subsUsed>=m.maxSubs)return alert('Você já usou as 5 substituições.');const out=m.starters[m.subOut],inn=m.bench[i];m.starters[m.subOut]=inn;m.bench[i]=out;m.subsUsed++;m.events.push('🔄 '+m.minute+"': "+inn+' entra no lugar de '+out+'.');delete m.subOut;save(s);renderLiveMatchV10()}
+function liveFormation(v){let s=load();s.liveMatch.formation=v;s.liveMatch.events.push('🧠 '+s.liveMatch.minute+"': formação alterada para "+v+'.');save(s);renderLiveMatchV10()}
+function liveMentality(v){let s=load();s.liveMatch.mentality=v;s.liveMatch.events.push('📋 '+s.liveMatch.minute+"': equipe agora joga em modo "+v+'.');save(s);renderLiveMatchV10()}
+function advanceLiveMatch(step){
+ let s=load(),m=s.liveMatch;if(m.finished)return;
+ const target=Math.min(90,m.minute+step),own=avg(DB[s.club]);
+ while(m.minute<target){m.minute++;const boost=m.mentality==='Ofensiva'||m.mentality==='Pressão alta'?1.25:m.mentality==='Defensiva'?.72:1;
+  if(Math.random()<.008*boost*(own/72)){m.home++;const scorer=m.starters[Math.floor(Math.random()*m.starters.length)];m.events.push('⚽ '+m.minute+"': GOOOOOL! "+scorer+' marca para '+s.club+'!')}
+  if(Math.random()<.007*(m.mentality==='Defensiva'?.75:1)){m.away++;m.events.push('⚽ '+m.minute+"': Gol do "+m.rival+'.')}
+  if(Math.random()<.006)m.events.push('🟨 '+m.minute+"': cartão amarelo após falta dura.");
+  if(Math.random()<.004)m.events.push('🧤 '+m.minute+"': grande defesa do goleiro!");
+  if(Math.random()<.004)m.events.push('🎯 '+m.minute+"': finalização perigosa passa perto do gol.");
+ }
+ if(m.minute>=90){m.finished=true;m.events.push('🏁 90\': fim de jogo! '+s.club+' '+m.home+' x '+m.away+' '+m.rival+'.');save(s);return finishLiveScreenV10()}
+ save(s);renderLiveMatchV10();
+}
+function finishLiveScreenV10(){
+ const s=load(),m=s.liveMatch,ps=m.starters.map(n=>findOwnPlayer(s,n)).filter(Boolean);
+ const rates=ps.map(p=>({p,r:Math.min(10,Math.max(5.4,6+(p.ovr-65)/22+Math.random()*1.5+(m.home>m.away?.3:0)))})).sort((a,b)=>b.r-a.r);
+ panel('🏁 FIM DE JOGO','<div class="liveScore final"><small>90+3</small><div><b>'+s.club+'</b><strong>'+m.home+' × '+m.away+'</strong><b>'+m.rival+'</b></div></div><div class="motm"><span>⭐</span><div><small>MELHOR JOGADOR</small><b>'+rates[0].p.name+'</b><p>Nota '+rates[0].r.toFixed(1)+'</p></div></div><h3>🎙️ PRINCIPAIS LANCES</h3><div class="commentaryV10">'+m.events.slice(-12).reverse().map(e=>'<p>'+e+'</p>').join('')+'</div><h3>📊 NOTAS</h3><div class="ratingsV10">'+rates.map(x=>'<div><span>'+x.p.pos+'</span><b>'+x.p.name+'</b><em>'+x.r.toFixed(1)+'</em></div>').join('')+'</div><button onclick="commitLiveMatchV10()">CONTINUAR ▶</button>');
+}
+function commitLiveMatchV10(){let s=load(),m=s.liveMatch;if(m.home>m.away){s.w=(s.w||0)+1;s.points=(s.points||0)+3;s.morale=Math.min(100,(s.morale||70)+4);s.reputation=(s.reputation||25)+1}else if(m.home===m.away){s.d=(s.d||0)+1;s.points=(s.points||0)+1}else{s.l=(s.l||0)+1;s.morale=Math.max(0,(s.morale||70)-3)}s.gf=(s.gf||0)+m.home;s.ga=(s.ga||0)+m.away;s.news.unshift('Partida: '+s.club+' '+m.home+' x '+m.away+' '+m.rival);delete s.liveMatch;save(s);dashboard(s)}
