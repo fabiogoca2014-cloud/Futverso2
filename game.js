@@ -435,3 +435,32 @@ function clubDashboardV100(){
 }
 
 function openCompetitions(){return competitionDashboardV100()}
+
+/* ===== FUTVERSO V100 — MOD COMPETIÇÕES JOGÁVEIS ===== */
+function competitionPoolV100(){return clubs.slice()}
+function makeKnockoutV100(name){
+ const pool=competitionPoolV100().sort(()=>Math.random()-.5).slice(0,Math.min(16,clubs.length));
+ return {name,round:1,teams:pool,history:[],champion:null};
+}
+function openPlayableCupV100(name){
+ let s=load();if(!s)return openV10Modes();s.cupsV100=s.cupsV100||{};
+ if(!s.cupsV100[name])s.cupsV100[name]=makeKnockoutV100(name);save(s);renderPlayableCupV100(name);
+}
+function renderPlayableCupV100(name){
+ const s=load(),c=s.cupsV100[name];if(c.champion)return panel('🏆 '+name,'<div class="utHero"><small>CAMPEÃO</small><b>🏆 '+c.champion+'</b><span>Competição concluída.</span></div><button onclick="resetCupV100(\''+name+'\')">🔁 NOVA EDIÇÃO</button>');
+ let games=[];for(let i=0;i<c.teams.length;i+=2)if(c.teams[i+1])games.push([c.teams[i],c.teams[i+1]]);
+ panel('🏆 '+name,'<div class="competitionHero"><b>FASE '+c.round+'</b><span>'+c.teams.length+' clubes restantes</span></div><div class="fixtures104">'+games.map(x=>'<div class="fixture104 '+(x.includes(s.club)?'mine':'')+'"><span>'+x[0]+'</span><b>×</b><span>'+x[1]+'</span></div>').join('')+'</div><button onclick="playCupRoundV100(\''+name+'\')">⚽ JOGAR FASE</button>');
+}
+function playCupRoundV100(name){
+ let s=load(),c=s.cupsV100[name],next=[],results=[];
+ for(let i=0;i<c.teams.length;i+=2){const a=c.teams[i],b=c.teams[i+1];if(!b){next.push(a);continue}let ga=simGoalsV104(a,b),gb=simGoalsV104(b,a);if(ga===gb){Math.random()<.5?ga++:gb++}const win=ga>gb?a:b;next.push(win);results.push(a+' '+ga+' x '+gb+' '+b)}
+ c.history.push({round:c.round,results});c.round++;c.teams=next;if(next.length===1){c.champion=next[0];if(c.champion===s.club){s.trophies=s.trophies||[];s.trophies.push(name);s.reputation=(s.reputation||25)+6}s.news.unshift('🏆 '+c.champion+' conquistou '+name)}save(s);renderPlayableCupV100(name);
+}
+function resetCupV100(name){let s=load();s.cupsV100[name]=makeKnockoutV100(name);save(s);renderPlayableCupV100(name)}
+function openCompetitionModeV100(id,name,desc){
+ const playable={copaBR:'Copa do Brasil',estaduais:'Campeonato Estadual',libertadores:'Libertadores',sulamericana:'Sul-Americana',continentais:'Liga Continental Alternativa',alternativas:'Liga Alternativa',historicos:'Campeonato Histórico'};
+ if(playable[id])return openPlayableCupV100(playable[id]);
+ if(id==='abertura')return openAperturaV100();
+ panel(name,'<div class="competitionHero"><b>'+name+'</b><span>'+desc+'</span></div>');
+}
+function openAperturaV100(){let s=ensureSeasonV104(load());panel('🏆 ABERTURA E CLAUSURA','<div class="competitionHero"><b>TEMPORADA DUPLA</b><span>Dois títulos no mesmo ano.</span></div><div class="hubGrid"><button class="hubCard" onclick="openSeasonV104()"><b>🌅 Abertura</b>Jogar a primeira etapa da temporada.</button><button class="hubCard" onclick="openSeasonV104()"><b>🌙 Clausura</b>Jogar a segunda etapa da temporada.</button></div>')}
