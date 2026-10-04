@@ -93,7 +93,7 @@ const V10_MODES=[
  {id:'challenge',icon:'🎯',name:'Desafios',desc:'Objetivos rápidos: escapar do rebaixamento, subir de divisão, revelar jogador ou conquistar copa.',rules:'Missões com objetivos específicos.'}
 ];
 function openV10Modes(){
- panel('🎮 MODOS • FUTVERSO V10','<div class="v10Hero"><b>ESCOLHA SUA HISTÓRIA</b><span>Agora cada carreira pode começar com um desafio diferente.</span></div><div class="modeGrid">'+V10_MODES.map(m=>'<button class="modeCard" onclick="selectV10Mode(\''+m.id+'\')"><span class="modeIcon">'+m.icon+'</span><strong>'+m.name+'</strong><small>'+m.desc+'</small><em>'+m.rules+'</em></button>').join('')+'</div>');
+ panel('🎮 MODOS • FUTVERSO V100','<div class="v10Hero"><b>ESCOLHA SUA HISTÓRIA</b><span>Agora cada carreira pode começar com um desafio diferente.</span></div><div class="modeGrid">'+V10_MODES.map(m=>'<button class="modeCard" onclick="selectV10Mode(\''+m.id+'\')"><span class="modeIcon">'+m.icon+'</span><strong>'+m.name+'</strong><small>'+m.desc+'</small><em>'+m.rules+'</em></button>').join('')+'</div>');
 }
 function selectV10Mode(id){
  sessionStorage.setItem('futversoV10Mode',id);
@@ -119,7 +119,7 @@ function startV10Career(club){
  if(mode==='survival'){s.money=Math.min(s.money,1200000);s.morale=45}
  if(mode==='youth')s.youthOnly=true;
  s.objective=v10Objective(mode,s);
- s.news.unshift('Futverso V10: modo '+V10_MODES.find(x=>x.id===mode).name+' iniciado.');
+ s.news.unshift('Futverso V100: modo '+V10_MODES.find(x=>x.id===mode).name+' iniciado.');
  save(s);dashboard(s);
 }
 function v10Objective(mode,s){
@@ -317,3 +317,5 @@ window.addEventListener('error',e=>{console.error('Futverso V100:',e.error||e.me
 function openModes(){return openAllModesV100()}
 
 function openV100Modes(){return openV10Modes()}
+
+function startCareer(club){return start(club)}
