@@ -126,7 +126,7 @@ function v10Objective(mode,s){
 }
 function openV10CareerPanel(){
  const s=load();if(!s)return;const m=V10_MODES.find(x=>x.id===(s.v10Mode||'classic'))||V10_MODES[0];
- panel('⭐ '+m.name,'<div class="careerTop"><div><small>MODO ATUAL</small><h2>'+m.icon+' '+m.name+'</h2><p>'+m.desc+'</p></div></div><div class="careerMeters"><div><small>REPUTAÇÃO</small><b>'+((s.reputation||25))+'</b></div><div><small>CONFIANÇA</small><b>'+((s.boardTrust||70))+'%</b></div><div><small>TEMPORADA</small><b>'+(s.season||1)+'</b></div></div><div class="transferCard"><h3>🎯 OBJETIVO PRINCIPAL</h3><p>'+(s.objective||v10Objective(m.id,s))+'</p></div><div class="hub"><button class="hubCard" onclick="openCareerHub()"><b>📋 Central da carreira</b>Empregos, estatísticas, história e notícias.</button><button class="hubCard" onclick="openCompetitions()"><b>🏆 Competições</b>Calendário, divisões, copas e seleção.</button><button class="hubCard" onclick="openClubHub()"><b>🏟️ Gestão do clube</b>Elenco, contratos, treino, tática e base.</button><button class="hubCard" onclick="openMarket()"><b>💼 Mercado da Bola</b>Transferências, empréstimos, trocas e pesquisa.</button><button class="hubCard" onclick="openPreseason()"><b>⚽ Pré-temporada</b>Amistosos, escalação, placar, eventos e notas.</button><button class="hubCard" onclick="openLiveMatchV10()"><b>🎙️ Partida ao vivo</b>Narração minuto a minuto, banco, substituições e tática durante o jogo.</button></div>');
+ panel('⭐ '+m.name,'<div class="careerTop"><div><small>MODO ATUAL</small><h2>'+m.icon+' '+m.name+'</h2><p>'+m.desc+'</p></div></div><div class="careerMeters"><div><small>REPUTAÇÃO</small><b>'+((s.reputation||25))+'</b></div><div><small>CONFIANÇA</small><b>'+((s.boardTrust||70))+'%</b></div><div><small>TEMPORADA</small><b>'+(s.season||1)+'</b></div></div><div class="transferCard"><h3>🎯 OBJETIVO PRINCIPAL</h3><p>'+(s.objective||v10Objective(m.id,s))+'</p></div><div class="hub"><button class="hubCard" onclick="openCareerHub()"><b>📋 Central da carreira</b>Empregos, estatísticas, história e notícias.</button><button class="hubCard" onclick="openCompetitions()"><b>🏆 Competições</b>Calendário, divisões, copas e seleção.</button><button class="hubCard" onclick="openClubHub()"><b>🏟️ Gestão do clube</b>Elenco, contratos, treino, tática e base.</button><button class="hubCard" onclick="openMarket()"><b>💼 Mercado da Bola</b>Transferências, empréstimos, trocas e pesquisa.</button><button class="hubCard" onclick="openPreseason()"><b>⚽ Pré-temporada</b>Amistosos, escalação, placar, eventos e notas.</button><button class="hubCard" onclick="openLiveMatchV10()"><b>🎙️ Partida ao vivo</b>Narração minuto a minuto, banco, substituições e tática durante o jogo.</button><button class="hubCard" onclick="openSeasonV104()"><b>📅 Temporada V10.4</b>Rodadas, jogos dos outros clubes, classificação, artilharia e notícias.</button></div>');
 }
 
 /* ===== FUTVERSO V10.1 — CENTRAL DE PARTIDA ===== */
@@ -235,3 +235,51 @@ function selectSquadPlayer(type,i){
 function autoLineupV103(){let s=ensureSquadV103(load()),all=DB[s.club].players.slice().sort((a,b)=>(b.ovr+(s.playerState[b.name].energy/20))-(a.ovr+(s.playerState[a.name].energy/20)));s.lineupV103=all.slice(0,11).map(p=>p.name);s.benchV103=all.slice(11,18).map(p=>p.name);save(s);openSquadV103()}
 function saveSquadFormation(v){let s=ensureSquadV103(load());s.formationV103=v;save(s)}
 function recoverSquadV103(){let s=ensureSquadV103(load());Object.values(s.playerState).forEach(x=>x.energy=Math.min(100,x.energy+12));save(s)}
+
+/* ===== FUTVERSO V10.4 — TEMPORADA, SEMANA E CLASSIFICAÇÃO ===== */
+function seasonTeamsV104(s){
+ let same=clubs.filter(c=>(DB[c].series||'')===(DB[s.club].series||''));
+ if(same.length<4)same=clubs.slice();
+ return same;
+}
+function ensureSeasonV104(s){
+ if(s.seasonV104)return s;
+ const teams=seasonTeamsV104(s),schedule=[];
+ for(let r=0;r<Math.max(1,teams.length-1);r++){
+  let rot=teams.slice();if(rot.length%2)rot.push('FOLGA');
+  for(let k=0;k<r;k++)rot=[rot[0],rot[rot.length-1],...rot.slice(1,-1)];
+  let games=[];for(let i=0;i<rot.length/2;i++){let a=rot[i],b=rot[rot.length-1-i];if(a!=='FOLGA'&&b!=='FOLGA')games.push([a,b])}
+  schedule.push(games);
+ }
+ const table={};teams.forEach(t=>table[t]={p:0,j:0,v:0,e:0,d:0,gp:0,gc:0,sg:0});
+ s.seasonV104={year:2026,round:0,schedule,table,scorers:{},results:[],finished:false};
+ return s;
+}
+function simGoalsV104(team,opp){const a=avg(DB[team]),b=avg(DB[opp]);return Math.max(0,Math.min(6,Math.floor(Math.random()*3+(a-b)/18)))}
+function applyGameV104(season,a,b,ga,gb){
+ const A=season.table[a],B=season.table[b];A.j++;B.j++;A.gp+=ga;A.gc+=gb;B.gp+=gb;B.gc+=ga;A.sg=A.gp-A.gc;B.sg=B.gp-B.gc;
+ if(ga>gb){A.v++;A.p+=3;B.d++}else if(gb>ga){B.v++;B.p+=3;A.d++}else{A.e++;B.e++;A.p++;B.p++}
+ season.results.push({round:season.round+1,a,b,ga,gb});
+ const addGoals=(team,n)=>{const ps=DB[team].players.filter(p=>['ATA','CA','PD','PE','MEI'].includes(p.pos));for(let i=0;i<n;i++){const p=ps[Math.floor(Math.random()*Math.max(1,ps.length))]||DB[team].players[0];const key=p.name+'|'+team;season.scorers[key]=(season.scorers[key]||0)+1}};
+ addGoals(a,ga);addGoals(b,gb);
+}
+function simulateWeekV104(){
+ let s=ensureSeasonV104(load()),se=s.seasonV104;if(se.finished)return openSeasonV104();
+ if(se.round>=se.schedule.length){se.finished=true;save(s);return finishSeasonV104()}
+ const games=se.schedule[se.round],roundNews=[];
+ games.forEach(([a,b])=>{let ga=simGoalsV104(a,b),gb=simGoalsV104(b,a);applyGameV104(se,a,b,ga,gb);roundNews.push(a+' '+ga+' x '+gb+' '+b)});
+ se.round++;s.round=se.round+1;
+ s.news.unshift('Rodada '+se.round+': '+roundNews.slice(0,3).join(' • '));
+ if(se.round>=se.schedule.length)se.finished=true;
+ save(s);openSeasonV104();
+}
+function sortedV104(se){return Object.entries(se.table).sort((a,b)=>b[1].p-a[1].p||b[1].v-a[1].v||b[1].sg-a[1].sg||b[1].gp-a[1].gp)}
+function openSeasonV104(){
+ let s=ensureSeasonV104(load());save(s);const se=s.seasonV104,tab=sortedV104(se),games=se.schedule[se.round]||[];
+ const last=se.results.filter(x=>x.round===se.round).map(x=>'<div class="fixture104"><span>'+x.a+'</span><b>'+x.ga+' × '+x.gb+'</b><span>'+x.b+'</span></div>').join('');
+ panel('📅 TEMPORADA '+se.year,'<div class="seasonHead"><div><small>DIVISÃO</small><b>'+(DB[s.club].series||'Liga')+'</b></div><div><small>RODADA</small><b>'+Math.min(se.round+1,se.schedule.length)+'/'+se.schedule.length+'</b></div><div><small>POSIÇÃO</small><b>'+(tab.findIndex(x=>x[0]===s.club)+1)+'º</b></div></div>'+(last?'<h3>⚽ ÚLTIMA RODADA</h3>'+last:'')+'<h3>📌 PRÓXIMOS JOGOS</h3><div class="fixtures104">'+(games.length?games.map(x=>'<div class="fixture104 '+(x.includes(s.club)?'mine':'')+'"><span>'+x[0]+'</span><b>×</b><span>'+x[1]+'</span></div>').join(''):'<p>Temporada concluída.</p>')+'</div><div class="weekActions"><button onclick="simulateWeekV104()">⏩ SIMULAR SEMANA</button><button onclick="openTableV104()">📊 CLASSIFICAÇÃO</button><button onclick="openScorersV104()">⚽ ARTILHARIA</button><button onclick="roundNewsV104()">📰 NOTÍCIAS</button></div>');
+}
+function openTableV104(){let s=ensureSeasonV104(load()),se=s.seasonV104,tab=sortedV104(se);panel('📊 CLASSIFICAÇÃO','<div class="table104"><div class="thead104"><b>#</b><b>Clube</b><b>J</b><b>SG</b><b>Pts</b></div>'+tab.map((x,i)=>'<div class="tr104 '+(x[0]===s.club?'me104':'')+'"><span>'+(i+1)+'</span><b>'+x[0]+'</b><span>'+x[1].j+'</span><span>'+x[1].sg+'</span><strong>'+x[1].p+'</strong></div>').join('')+'</div>')}
+function openScorersV104(){let s=ensureSeasonV104(load()),a=Object.entries(s.seasonV104.scorers).sort((x,y)=>y[1]-x[1]).slice(0,20);panel('⚽ ARTILHARIA','<div class="list">'+(a.length?a.map((x,i)=>{const [n,c]=x[0].split('|');return '<div class="row"><span>'+(i+1)+'. <b>'+n+'</b><br><small>'+c+'</small></span><span class="ovr">'+x[1]+' gols</span></div>'}).join(''):'<div class="card">A temporada ainda não teve gols.</div>')+'</div>')}
+function roundNewsV104(){let s=load();panel('📰 CENTRAL DE NOTÍCIAS','<div class="list">'+s.news.slice(0,20).map(n=>'<div class="card">'+n+'</div>').join('')+'</div>')}
+function finishSeasonV104(){let s=ensureSeasonV104(load()),tab=sortedV104(s.seasonV104),pos=tab.findIndex(x=>x[0]===s.club)+1;if(pos===1){s.trophies=s.trophies||[];s.trophies.push((DB[s.club].series||'Liga')+' '+s.seasonV104.year);s.reputation=(s.reputation||25)+8;s.news.unshift('🏆 '+s.club+' é campeão!')}else s.news.unshift('🏁 Temporada encerrada: '+s.club+' terminou em '+pos+'º.');s.seasonV104.finished=true;save(s);openSeasonV104()}
