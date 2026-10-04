@@ -290,7 +290,7 @@ window.FUTVERSO_VERSION='V100';
 function safeSaveV100(s){try{save(s);return true}catch(e){console.error(e);return false}}
 function startMatchV100(){const s=load();if(!s||!s.club)return openV10Modes();return openLiveMatchV10()}
 function openCareerV100(){const s=load();if(s&&s.v10Mode)return openV10CareerPanel();return openCareerHub()}
-function openAllModesV100(){
+function openAllModesLegacyV100(){
  panel('🎮 FUTVERSO V100 — MODOS','<div class="hubGrid">'+
  '<button class="hubCard" onclick="openV10Modes()"><b>⚽ Carreira de Técnico</b>Escolha um clube e construa sua história.</button>'+
  '<button class="hubCard" onclick="openSeasonV104()"><b>🇧🇷 Séries A–F</b>Temporada, rodadas, classificação e artilharia.</button>'+
@@ -319,3 +319,82 @@ function openModes(){return openAllModesV100()}
 function openV100Modes(){return openV10Modes()}
 
 function startCareer(club){return start(club)}
+
+/* ===== FUTVERSO V100 — CENTRAL COMPLETA DE 30 MODOS ===== */
+const MODES30=[
+['⚽','Carreira de Técnico','career','Escolha um clube, dispute temporadas, receba propostas e construa sua história.'],
+['🇧🇷','Brasileirão Série A','serieA','Primeira divisão nacional.'],
+['🇧🇷','Brasileirão Série B','serieB','Segunda divisão, acesso e rebaixamento.'],
+['🇧🇷','Brasileirão Série C','serieC','Terceira divisão nacional.'],
+['🇧🇷','Brasileirão Série D','serieD','Quarta divisão nacional.'],
+['🇧🇷','Série E','serieE','Divisão fictícia do universo Futverso.'],
+['🇧🇷','Série F','serieF','Divisão fictícia e ponto de partida do Road to Glory.'],
+['🏆','Copa do Brasil','copaBR','Mata-mata nacional com fases eliminatórias.'],
+['🗺️','Campeonatos Estaduais','estaduais','Competições estaduais da temporada.'],
+['🌎','Libertadores','libertadores','Principal competição continental.'],
+['🏆','Sul-Americana','sulamericana','Competição continental eliminatória.'],
+['🌎','Ligas Continentais Alternativas','continentais','Competições alternativas do universo do jogo.'],
+['🔀','Ligas Alternativas','alternativas','Formatos diferentes do Brasileirão tradicional.'],
+['🏆','Abertura e Clausura','abertura','Dois campeonatos no mesmo ano e classificação geral.'],
+['🥇','Campeonatos Históricos','historicos','Formatos inspirados em diferentes épocas do futebol brasileiro.'],
+['🎮','Brasil Ultimate Team','ultimate','Monte elenco, abra pacotes e cumpra objetivos.'],
+['👥','Meu Elenco','squad','Titulares, banco, reservas, energia e moral.'],
+['🔄','Mercado de Transferências','market','Comprar, vender, negociar, empréstimos e propostas.'],
+['🎯','Desafios e Objetivos','objectives','Metas de temporada, elenco, jovens, OVR e vitórias.'],
+['📅','Simulação de Semana','week','Avance o calendário e acompanhe os acontecimentos.'],
+['⚽','Partida 11×11','match','Escalação, narração, substituições e tática.'],
+['📰','Central de Notícias','news','Notícias do clube, divisão e temporada.'],
+['💼','Propostas de Clubes','jobs','Troque de equipe conforme sua reputação.'],
+['📊','Estatísticas da Carreira','stats','Campanha, gols, resultados e histórico.'],
+['💰','BR Coins','coins','Economia especial do Ultimate Team.'],
+['🎁','Pacotes e Recompensas','packs','Pacotes, recompensas e progressão.'],
+['🏅','Sala de Troféus','trophies','Todos os títulos conquistados.'],
+['📖','Tutorial Inicial','tutorial','Aprenda as principais áreas antes de jogar.'],
+['🛡️','Clubes por Divisão','clubs','Escolha clubes organizados por divisão.'],
+['🔁','Nova Carreira','newcareer','Apague o progresso da carreira atual e comece novamente.']
+];
+function openModes30(){
+ panel('🎮 FUTVERSO V100 • 30 MODOS','<div class="v100Intro"><b>30 MODOS E ÁREAS PRINCIPAIS</b><span>Escolha onde quer jogar ou administrar sua carreira.</span></div><div class="modes30">'+MODES30.map((m,i)=>'<button class="mode30" onclick="launchMode30('+i+')"><span>'+m[0]+'</span><div><b>'+m[1]+'</b><small>'+m[3]+'</small></div><em>›</em></button>').join('')+'</div>');
+}
+function launchMode30(i){
+ const m=MODES30[i];if(!m)return;const id=m[2],s=load();
+ if(id==='career')return openV10Modes();
+ if(['serieA','serieB','serieC','serieD','serieE','serieF'].includes(id))return openDivisionV100('Série '+id.slice(-1).toUpperCase());
+ if(id==='squad')return s?openSquad():openV10Modes();
+ if(id==='market')return s?openMarket():openV10Modes();
+ if(id==='objectives')return s?openObjectives():openV10Modes();
+ if(id==='week')return s?openSeasonV104():openV10Modes();
+ if(id==='match')return s?startMatchV100():openV10Modes();
+ if(id==='news')return s?roundNewsV104():openV10Modes();
+ if(id==='jobs')return s?careerJobs():openV10Modes();
+ if(id==='stats')return s?openCareerStatsV100():openV10Modes();
+ if(id==='ultimate')return openUltimateV100();
+ if(id==='coins')return openCoinsV100();
+ if(id==='packs')return openPacksV100();
+ if(id==='trophies')return s?openTrophiesV100():openV10Modes();
+ if(id==='tutorial')return restartTutorial();
+ if(id==='clubs')return openClubsByDivisionV100();
+ if(id==='newcareer')return confirmNewCareerV100();
+ return openCompetitionModeV100(id,m[1],m[3]);
+}
+function openDivisionV100(series){
+ const list=clubs.filter(c=>DB[c].series===series);
+ panel('🇧🇷 '+series,'<div class="competitionHero"><b>'+series+'</b><span>'+(list.length||0)+' clubes disponíveis na base atual</span></div><div class="list">'+(list.length?list.map(c=>'<div class="card"><b>'+c+'</b><br><small>'+DB[c].stadium+' • OVR '+avg(DB[c]).toFixed(1)+'</small></div>').join(''):'<div class="card">A estrutura da divisão está ativa. A base completa de clubes ainda será ampliada.</div>')+'</div>'+(load()?'<button onclick="openSeasonV104()">📅 ABRIR TEMPORADA</button>':''));
+}
+function openCompetitionModeV100(id,name,desc){
+ const formats={copaBR:'Mata-mata',estaduais:'Estadual',libertadores:'Continental',sulamericana:'Continental',continentais:'Alternativo',alternativas:'Liga alternativa',abertura:'Abertura + Clausura',historicos:'Histórico'};
+ panel(name,'<div class="competitionHero"><b>'+name+'</b><span>'+desc+'</span></div><div class="card"><b>Formato:</b> '+(formats[id]||'Competição')+'<br><br>Esta competição faz parte da Central de Competições V100.</div><button onclick="openCompetitions()">🏆 CENTRAL DE COMPETIÇÕES</button>');
+}
+function openCareerStatsV100(){const s=load();panel('📊 ESTATÍSTICAS DA CARREIRA','<div class="careerMeters"><div><small>JOGOS</small><b>'+((s.w||0)+(s.d||0)+(s.l||0))+'</b></div><div><small>VITÓRIAS</small><b>'+(s.w||0)+'</b></div><div><small>GOLS</small><b>'+(s.gf||0)+'</b></div></div><div class="card">Vitórias: '+(s.w||0)+' • Empates: '+(s.d||0)+' • Derrotas: '+(s.l||0)+'<br>Gols: '+(s.gf||0)+' pró / '+(s.ga||0)+' contra<br>Reputação: '+(s.reputation||25)+'</div>')}
+function openTrophiesV100(){const s=load(),t=s.trophies||[];panel('🏅 SALA DE TROFÉUS','<div class="trophyRoom">'+(t.length?t.map((x,i)=>'<div class="trophyCard"><span>🏆</span><b>'+x+'</b><small>Conquista '+(i+1)+'</small></div>').join(''):'<div class="card">Sua sala ainda está vazia. Conquiste seu primeiro título!</div>')+'</div>')}
+function ensureUTV100(){let u;try{u=JSON.parse(localStorage.getItem('futversoUTV100'))}catch(e){}if(!u)u={coins:1500,packs:2,players:[]};return u}
+function saveUTV100(u){localStorage.setItem('futversoUTV100',JSON.stringify(u))}
+function openUltimateV100(){const u=ensureUTV100();panel('🎮 BRASIL ULTIMATE TEAM','<div class="utHero"><small>BR COINS</small><b>💰 '+u.coins+'</b><span>🎁 '+u.packs+' pacotes disponíveis</span></div><div class="hubGrid"><button class="hubCard" onclick="openPacksV100()"><b>🎁 Abrir Pacotes</b>Ganhe jogadores para seu elenco.</button><button class="hubCard" onclick="openUTSquadV100()"><b>👥 Meu Ultimate Team</b>'+u.players.length+' jogadores no clube.</button><button class="hubCard" onclick="openCoinsV100()"><b>💰 BR Coins</b>Saldo e recompensas.</button></div>')}
+function openCoinsV100(){const u=ensureUTV100();panel('💰 BR COINS','<div class="utHero"><small>SEU SALDO</small><b>'+u.coins+' BR COINS</b><span>Ganhe moedas cumprindo objetivos e abrindo recompensas.</span></div>')}
+function openPacksV100(){const u=ensureUTV100();panel('🎁 PACOTES E RECOMPENSAS','<div class="utHero"><b>'+u.packs+' PACOTES</b><span>Cada pacote revela 3 jogadores.</span></div><button '+(u.packs<1?'disabled':'')+' onclick="openPackNowV100()">🎁 ABRIR PACOTE</button>')}
+function openPackNowV100(){let u=ensureUTV100();if(u.packs<1)return;let pool=[];clubs.forEach(c=>DB[c].players.forEach(p=>pool.push({name:p.name,pos:p.pos,ovr:p.ovr,club:c})));pool.sort(()=>Math.random()-.5);const won=pool.slice(0,3);u.players.push(...won);u.packs--;u.coins+=150;saveUTV100(u);panel('✨ PACOTE ABERTO','<div class="packReveal">'+won.map(p=>'<div class="packPlayer"><small>'+p.pos+'</small><b>'+p.name+'</b><strong>'+p.ovr+'</strong><span>'+p.club+'</span></div>').join('')+'</div><button onclick="openUltimateV100()">CONTINUAR</button>')}
+function openUTSquadV100(){const u=ensureUTV100();panel('👥 MEU ULTIMATE TEAM','<div class="list">'+(u.players.length?u.players.map(p=>'<div class="player"><div><b>'+p.name+'</b><br><small>'+p.pos+' • '+p.club+'</small></div><span class="ovr">'+p.ovr+'</span></div>').join(''):'<div class="card">Abra pacotes para montar seu primeiro elenco.</div>')+'</div>')}
+function openClubsByDivisionV100(){panel('🛡️ CLUBES POR DIVISÃO','<div class="hubGrid">'+['Série A','Série B','Série C','Série D','Série E','Série F'].map(x=>'<button class="hubCard" onclick="openDivisionV100(\''+x+'\')"><b>🇧🇷 '+x+'</b>'+clubs.filter(c=>DB[c].series===x).length+' clubes na base atual.</button>').join('')+'</div>')}
+function confirmNewCareerV100(){panel('🔁 NOVA CARREIRA','<div class="card"><b>Começar do zero?</b><p>Esta opção apaga a carreira atual deste aparelho e abre a seleção de clubes.</p></div><button onclick="newCareer()">SIM, COMEÇAR NOVA CARREIRA</button>')}
+
+function openAllModesV100(){return openModes30()}
