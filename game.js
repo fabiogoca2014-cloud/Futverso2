@@ -23,7 +23,7 @@ function boot(){renderClubs();const light=localStorage.getItem('futversoLight')=
 function toggleLight(v){localStorage.setItem('futversoLight',v?'1':'0');document.body.classList.toggle('lite',v)}
 function panelBack(){const s=load();s?dashboard(s):show('home')}
 function openMode(t,d){panel(t,'<div class="card"><p>'+d+'</p></div>')}
-function openModes(){panel('🎮 Modos e áreas','<div class="list">'+[
+function openModesLegacy(){panel('🎮 Modos e áreas','<div class="list">'+[
 '🎮 Modo Carreira','🆕 Criar Clube — começa na Série F','⚡ Partida Rápida','🏆 Copa BR','👥 Meu Elenco','🔄 Mercado de Transferências','📄 Contratos','🧠 Táticas','🏋️ Treino','🌱 Categorias de Base','🔎 Olheiro','🏆 Torneios — Séries A, B, C, D, E e F','📊 Tabela e Estatísticas','🎯 Objetivos','🌎 Mundo Vivo','🇧🇷 Seleção Brasileira','📖 Tutorial inicial','📱 Modo Leve'
 ].map(x=>'<div class="card">'+x+'</div>').join('')+'</div>')}
 function createClub(){panel('🆕 Criar Clube','<div class="card"><p>Crie seu clube para começar na <b>Série F</b> e buscar acessos até a Série A.</p><input id="newClubName" class="input" placeholder="Nome do clube"><button onclick="saveCreatedClub()">CRIAR NA SÉRIE F</button></div>')}
@@ -283,3 +283,34 @@ function openTableV104(){let s=ensureSeasonV104(load()),se=s.seasonV104,tab=sort
 function openScorersV104(){let s=ensureSeasonV104(load()),a=Object.entries(s.seasonV104.scorers).sort((x,y)=>y[1]-x[1]).slice(0,20);panel('⚽ ARTILHARIA','<div class="list">'+(a.length?a.map((x,i)=>{const [n,c]=x[0].split('|');return '<div class="row"><span>'+(i+1)+'. <b>'+n+'</b><br><small>'+c+'</small></span><span class="ovr">'+x[1]+' gols</span></div>'}).join(''):'<div class="card">A temporada ainda não teve gols.</div>')+'</div>')}
 function roundNewsV104(){let s=load();panel('📰 CENTRAL DE NOTÍCIAS','<div class="list">'+s.news.slice(0,20).map(n=>'<div class="card">'+n+'</div>').join('')+'</div>')}
 function finishSeasonV104(){let s=ensureSeasonV104(load()),tab=sortedV104(s.seasonV104),pos=tab.findIndex(x=>x[0]===s.club)+1;if(pos===1){s.trophies=s.trophies||[];s.trophies.push((DB[s.club].series||'Liga')+' '+s.seasonV104.year);s.reputation=(s.reputation||25)+8;s.news.unshift('🏆 '+s.club+' é campeão!')}else s.news.unshift('🏁 Temporada encerrada: '+s.club+' terminou em '+pos+'º.');s.seasonV104.finished=true;save(s);openSeasonV104()}
+
+/* ===== FUTVERSO V100 — INTEGRAÇÃO E ESTABILIDADE ===== */
+window.FUTVERSO_VERSION='V100';
+function safeSaveV100(s){try{save(s);return true}catch(e){console.error(e);return false}}
+function startMatchV100(){const s=load();if(!s||!s.club)return openV10Modes();return openLiveMatchV10()}
+function openCareerV100(){const s=load();if(s&&s.v10Mode)return openV10CareerPanel();return openCareerHub()}
+function openAllModesV100(){
+ panel('🎮 FUTVERSO V100 — MODOS','<div class="hubGrid">'+
+ '<button class="hubCard" onclick="openV10Modes()"><b>⚽ Carreira de Técnico</b>Escolha um clube e construa sua história.</button>'+
+ '<button class="hubCard" onclick="openSeasonV104()"><b>🇧🇷 Séries A–F</b>Temporada, rodadas, classificação e artilharia.</button>'+
+ '<button class="hubCard" onclick="openCompetitions()"><b>🏆 Competições</b>Copa do Brasil, estaduais, continentais e formatos alternativos.</button>'+
+ '<button class="hubCard" onclick="openSquad()"><b>👥 Meu Elenco</b>Escalação, banco, energia e moral.</button>'+
+ '<button class="hubCard" onclick="openMarket()"><b>🔄 Mercado</b>Busca, compra, venda e negociações.</button>'+
+ '<button class="hubCard" onclick="openObjectives()"><b>🎯 Desafios e Objetivos</b>Metas da carreira e do elenco.</button>'+
+ '<button class="hubCard" onclick="openSeasonV104()"><b>📅 Simular Semana</b>Calendário e acontecimentos da rodada.</button>'+
+ '<button class="hubCard" onclick="startMatchV100()"><b>⚽ Partida 11×11</b>Escalação, narração, tática e substituições.</button>'+
+ '<button class="hubCard" onclick="roundNewsV104()"><b>📰 Central de Notícias</b>Acompanhe sua temporada.</button>'+
+ '<button class="hubCard" onclick="openCareerV100()"><b>💼 Propostas e Carreira</b>Reputação, histórico e evolução do técnico.</button>'+
+ '<button class="hubCard" onclick="openTable()"><b>📊 Estatísticas</b>Resultados e desempenho da carreira.</button>'+
+ '<button class="hubCard" onclick="openMode(\'🎮 Brasil Ultimate Team\',\'Monte seu elenco, conquiste recompensas, BR Coins e cumpra objetivos.\')"><b>🎮 Brasil Ultimate Team</b>Elenco especial, objetivos e recompensas.</button>'+
+ '<button class="hubCard" onclick="openMode(\'🏅 Sala de Troféus\',\'Todos os títulos conquistados na carreira ficam registrados aqui.\')"><b>🏅 Sala de Troféus</b>Veja suas conquistas.</button>'+
+ '</div>');
+}
+function validateSaveV100(){
+ let s=load();if(!s||!s.club||!DB[s.club])return false;
+ s.news=Array.isArray(s.news)?s.news:[];s.money=Number.isFinite(s.money)?s.money:1000000;s.morale=Number.isFinite(s.morale)?s.morale:70;
+ safeSaveV100(s);return true;
+}
+window.addEventListener('error',e=>{console.error('Futverso V100:',e.error||e.message)});
+
+function openModes(){return openAllModesV100()}
